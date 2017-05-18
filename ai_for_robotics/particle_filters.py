@@ -1,10 +1,5 @@
-#In this exercise, try to write a program that
-# will resample particles according to their weights.
-# Particles with higher weights should be sampled
-# more frequently (in proportion to their weight).
-
-# Don't modify anything below. Please scroll to the 
-# bottom to enter your code.
+#In this exercise, you should implement the
+# resampler shown in the previous video.
 
 from math import *
 import random
@@ -85,7 +80,7 @@ class robot:
         for i in range(len(landmarks)):
             dist = sqrt((self.x - landmarks[i][0]) ** 2 + (self.y - landmarks[i][1]) ** 2)
             prob *= self.Gaussian(dist, self.sense_noise, measurement[i])
-        return prob
+        return prob    
     
     def __repr__(self):
         return '[x=%.6s y=%.6s orient=%.6s]' % (str(self.x), str(self.y), str(self.orientation))
@@ -99,17 +94,19 @@ class robot:
 #myrobot = myrobot.move(-pi/2, 10.0)
 #print myrobot.sense()
 
+####   DON'T MODIFY ANYTHING ABOVE HERE! ENTER CODE BELOW ####
 class resampler:
     def __init__(self, particles, weights):
         self.particles = particles
-        weights = weights
+        self.weights = weights
         
     def resample_with_search(self):
-        s = sum(w)
+        N = len(self.particles)
+        s = sum(self.weights)
         #calculate probabilites and store prbability and index dictionary
         prob_and_index = []
         for i in range(N):
-            prob_and_index.append((w[i]/s, i))
+            prob_and_index.append((self.weights[i]/s, i))
         
         #sort the dictionary in descending order based on prbability
         prob_and_index.sort(key=lambda x: -x[0])
@@ -128,10 +125,25 @@ class resampler:
             random_prob = random.random()
             for partial_prob_index in range(N):
                 if partial_sums[partial_prob_index][0] >= random_prob:
-                    p3.append(p[partial_sums[partial_prob_index][1]])
+                    p3.append(self.particles[partial_sums[partial_prob_index][1]])
                     break
-        return p3        
+        return p3
 
+    def resample_wheel(self):
+        N = len(self.particles)
+        max_weight = max(self.weights)
+        index = int(random.random()*(N-1))
+        
+        p3 = []
+        for i in range(N):
+            b = random.random()*2*max_weight
+            while(self.weights[index] < b):
+                b -= self.weights[index]
+                index = (index + 1)%N
+            p3.append(self.particles[index])
+            
+        return p3    
+        
 myrobot = robot()
 myrobot = myrobot.move(0.1, 5.0)
 Z = myrobot.sense()
@@ -152,12 +164,9 @@ w = []
 for i in range(N):
     w.append(p[i].measurement_prob(Z))
 
-#### DON'T MODIFY ANYTHING ABOVE HERE! ENTER CODE BELOW ####
-# You should make sure that p3 contains a list with particles
-# resampled according to their weights.
-# Also, DO NOT MODIFY p.
-
 p3 = []
 r = resampler(p, w)
-p3 = r.resample_with_search()
+p3 = r.resample_wheel()
 
+p = p3
+print p #please leave this print statement here for grading!
